@@ -40,7 +40,7 @@ impl From<EventKind> for Event {
     fn from(kind: EventKind) -> Event {
         let inner = expect!(
             web_sys::Event::new(&Cow::from(kind)),
-            "could not create event"
+            "creating an `Event`"
         );
         Event { inner }
     }
@@ -193,28 +193,6 @@ impl AddEventListenerOptions {
     }
 }
 
-/// The `EventTarget` interface in rust.
-pub trait IEventTarget {
-    /// Run the function `listener` when the event type fires on this object.
-    ///
-    /// Unlike the javascript equivalent, this function returns a guard that unregisters the
-    /// callback when it is dropped.
-    fn add_event_listener(
-        &self,
-        event_kind: EventKind,
-        listener: impl Fn(Event) + 'static,
-    ) -> SubscribeGuard {
-        self.add_event_listener_opts(event_kind, listener, Default::default())
-    }
-    fn add_event_listener_opts(
-        &self,
-        event_kind: EventKind,
-        listener: impl Fn(Event) + 'static,
-        options: AddEventListenerOptions,
-    ) -> SubscribeGuard;
-    fn dispatch_event(&self, event: impl Into<Event>) -> bool;
-}
-
 #[repr(transparent)]
 pub struct EventTarget {
     pub(crate) inner: web_sys::EventTarget,
@@ -224,84 +202,24 @@ impl EventTarget {
     pub fn new() -> Self {
         let inner = expect!(
             web_sys::EventTarget::new(),
-            "failed to create an `EventTarget`"
+            "creating an `EventTarget`"
         );
         Self { inner }
     }
-}
 
-macro_rules! impl_IEventTarget {
-    ($name:ident, $as_ref:expr) => {
-        impl IEventTarget for $name {
-            fn add_event_listener_opts(
-                &self,
-                event_kind: EventKind,
-                listener: impl Fn(Event) + 'static,
-                options: AddEventListenerOptions,
-            ) -> SubscribeGuard {
-                let target = self.inner.clone();
-                let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
-                    listener(event.into());
-                }) as Box<dyn Fn(web_sys::Event)>);
-                let event_kind = Cow::from(event_kind);
-                if let Some(opts) = options.into_web_sys() {
-                    expect!(
-                        target.add_event_listener_with_callback_and_add_event_listener_options(
-                            &event_kind.clone(),
-                            closure.as_ref().unchecked_ref(),
-                            &opts,
-                        ),
-                        "failed to add event listener to EventTarget"
-                    );
-                } else {
-                    expect!(
-                        target.add_event_listener_with_callback(
-                            &event_kind.clone(),
-                            closure.as_ref().unchecked_ref(),
-                        ),
-                        "failed to add event listener to EventTarget"
-                    );
-                }
-                if let Some(opts) = options.into_web_sys_remove() {
-                    SubscribeGuard::new(move || {
-                        let _ = closure;
-                        expect!(
-                            target.remove_event_listener_with_callback_and_event_listener_options(
-                                &event_kind,
-                                closure.as_ref().unchecked_ref(),
-                                &opts
-                            ),
-                            "unable to remove event listener"
-                        );
-                    })
-                } else {
-                    SubscribeGuard::new(move || {
-                        let _ = closure;
-                        expect!(
-                            target.remove_event_listener_with_callback(
-                                &event_kind,
-                                closure.as_ref().unchecked_ref()
-                            ),
-                            "unable to remove event listener"
-                        );
-                    })
-                }
-            }
-
-            fn dispatch_event(&self, event: impl Into<Event>) -> bool {
-                let event = event.into();
-                expect!(
-                    self.inner.dispatch_event(&event.clone().into()),
-                    "could not dispatch event {:?}",
-                    event
-                )
-            }
-        }
+    /// Run the function `listener` when the event type fires on this object.
+    ///
+    /// Unlike the javascript equivalent, this function returns a guard that unregisters the
+    /// callback when it is dropped.
+    pub fn add_event_listener(
+        &self,
+        event_kind: EventKind,
+        listener: impl Fn(Event) + 'static,
+    ) -> SubscribeGuard {
+        self.add_event_listener_opts(event_kind, listener, Default::default())
     }
-}
 
-impl IEventTarget for EventTarget {
-    fn add_event_listener_opts(
+    pub fn add_event_listener_opts(
         &self,
         event_kind: EventKind,
         listener: impl Fn(Event) + 'static,
@@ -319,7 +237,7 @@ impl IEventTarget for EventTarget {
                     closure.as_ref().unchecked_ref(),
                     &opts,
                 ),
-                "failed to add event listener to EventTarget"
+                "adding an event listener to an `EventTarget`"
             );
         } else {
             expect!(
@@ -327,7 +245,7 @@ impl IEventTarget for EventTarget {
                     &event_kind.clone(),
                     closure.as_ref().unchecked_ref(),
                 ),
-                "failed to add event listener to EventTarget"
+                "adding an event listener to an `EventTarget`"
             );
         }
         if let Some(opts) = options.into_web_sys_remove() {
@@ -339,7 +257,7 @@ impl IEventTarget for EventTarget {
                         closure.as_ref().unchecked_ref(),
                         &opts
                     ),
-                    "unable to remove event listener"
+                    "removing event listener"
                 );
             })
         } else {
@@ -350,17 +268,17 @@ impl IEventTarget for EventTarget {
                         &event_kind,
                         closure.as_ref().unchecked_ref()
                     ),
-                    "unable to remove event listener"
+                    "removing event listener"
                 );
             })
         }
     }
 
-    fn dispatch_event(&self, event: impl Into<Event>) -> bool {
+    pub fn dispatch_event(&self, event: impl Into<Event>) -> bool {
         let event = event.into();
         expect!(
             self.inner.dispatch_event(&event.clone().into()),
-            "could not dispatch event {:?}",
+            "dispatching event {:?}",
             event
         )
     }

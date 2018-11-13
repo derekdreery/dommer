@@ -10,6 +10,4 @@ crate-type = ["cdylib"]
 [dependencies]
 dommer = { path = "../.." }
 wasm-bindgen = { path = "../../../wasm-bindgen" }
-console-web = { path = "../../../console-web" }
-console_error_panic_hook = "*"
 

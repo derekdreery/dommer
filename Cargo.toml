@@ -14,10 +14,12 @@ members = [
 wasm-bindgen = { path = "../wasm-bindgen" }
 js-sys = { path = "../wasm-bindgen/crates/js-sys" }
 bitflags = "1"
+http = "0.1"
 
 [dependencies.web-sys]
 path = "../wasm-bindgen/crates/web-sys"
 features = [
+    "console",
     "Window",
     "Document",
     "Node",
@@ -31,4 +33,7 @@ features = [
     "EventTarget",
     "EventListenerOptions",
     "AddEventListenerOptions",
+    "Request",
+    "RequestInit",
+    "ReferrerPolicy",
 ]
