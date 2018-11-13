@@ -1,0 +1,15 @@
+[package]
+name = "dommer-example-simple"
+version = "0.1.0"
+authors = ["Richard Dodd <richard.o.dodd@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+dommer = { path = "../.." }
+wasm-bindgen = { path = "../../../wasm-bindgen" }
+console-web = { path = "../../../console-web" }
+console_error_panic_hook = "*"
+
